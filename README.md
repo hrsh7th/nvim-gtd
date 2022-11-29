@@ -36,3 +36,28 @@ vim.keymap.set('n', 'gfv', function()
 end)
 ```
 
+# Sources
+
+The following sources are built-in.
+
+#### lsp
+
+(Default: enabled)
+
+Find definitions via LSP `textDocument/definition`.
+
+#### findfile
+
+(Default: enabled)
+
+Find definitions via `vim.fn.findfile` with `;` flag.
+
+#### walk
+
+(Default: disabled)
+
+Traverse all filepaths under project.
+The ignore pattern isn't implemented yet so it might be slow.
+
+
+
