@@ -312,7 +312,6 @@ function IO.scandir(path, chunk_size)
         path = path .. '/' .. name,
       })
     end
-    IO.fs_closedir(fd):await()
     return entries
   end)
 end

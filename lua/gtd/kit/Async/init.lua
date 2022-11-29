@@ -37,12 +37,12 @@ function Async.async(runner)
         end
 
         AsyncTask.resolve(v)
-          :next(function(...)
-            next_step(coroutine.resume(thread, ...))
-          end)
-          :catch(function(...)
-            next_step(coroutine.resume(thread, ...))
-          end)
+            :next(function(...)
+              next_step(coroutine.resume(thread, true, ...))
+            end)
+            :catch(function(...)
+              next_step(coroutine.resume(thread, false, ...))
+            end)
       end
 
       next_step(coroutine.resume(thread, unpack(args)))
@@ -57,7 +57,11 @@ function Async.await(task)
   if not Async.___threads___[coroutine.running()] then
     error('`Async.await` must be called in async function.')
   end
-  return coroutine.yield(AsyncTask.resolve(task))
+  local ok, res = coroutine.yield(AsyncTask.resolve(task))
+  if not ok then
+    error(res)
+  end
+  return res
 end
 
 ---Create async function from callback function.
@@ -75,22 +79,17 @@ function Async.promisify(runner, option)
       local max = #args + 1
       local pos = math.min(option.callback or max, max)
       table.insert(args, pos, function(err, ...)
-        local schedule = function(f)
-          f()
-        end
         if not vim.is_thread() then
           if option.schedule and vim.in_fast_event() then
-            schedule = vim.schedule
+            resolve = vim.schedule_wrap(resolve)
+            reject = vim.schedule_wrap(reject)
           end
         end
-        local value = { ... }
-        schedule(function()
-          if err then
-            reject(err)
-          else
-            resolve(unpack(value))
-          end
-        end)
+        if err then
+          reject(err)
+        else
+          resolve(...)
+        end
       end)
       runner(unpack(args))
     end)

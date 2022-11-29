@@ -14,8 +14,8 @@ function Source:get_position_encoding_kind()
   return 'utf-8'
 end
 
----@param params gtd.kit.LSP.DefinitionParams
-function Source:execute(params)
+---@param definition_params gtd.kit.LSP.DefinitionParams
+function Source:execute(definition_params)
   return Async.run(function()
     local locations = {}
     for _, client in ipairs(vim.lsp.get_active_clients({ bufnr = 0 })) do
@@ -23,8 +23,8 @@ function Source:execute(params)
       if server_capabilities.definitionProvider then
         ---@type gtd.kit.LSP.TextDocumentDefinitionResponse
         local response = Client.new(client):textDocument_definition({
-          textDocument = params.textDocument,
-          position = params.position, -- TODO: Fix position encoding
+          textDocument = definition_params.textDocument,
+          position = definition_params.position, -- TODO: Fix position encoding
         }):await()
         if response then
           if response.range then
