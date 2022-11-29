@@ -13,30 +13,23 @@ end
 ---@return gtd.kit.LSP.TextDocumentDefinitionResponse
 function Source:execute(definition_params, context)
   return Async.run(function()
-    local dname = vim.fs.dirname(vim.uri_to_fname(definition_params.textDocument.uri))
+    local dpath = vim.fs.dirname(vim.uri_to_fname(definition_params.textDocument.uri))
     local texts = vim.api.nvim_buf_get_lines(
       context.bufnr,
       definition_params.position.line,
       definition_params.position.line + 1,
       false
     )
-    local fpath = RegExp.extract_at(texts[1] or '', [[\k\+]], definition_params.position.character + 1)
+    local fpath = RegExp.extract_at(texts[1] or '', [[\f\+]], definition_params.position.character + 1)
     if fpath == '' then
       return {}
     end
-    fpath = vim.fn.expand(fpath)
-    vim.pretty_print({ fpath = fpath })
-    if fpath:sub(1, 1) == '/' and vim.fn.filereadable(fpath) == 1 and not vim.fn.isdirectory(fpath) == 0 then
-      return {
-        uri = vim.uri_from_fname(vim.fn.fnemdmodify(fpath, ':p'))
-      }
-    end
-    local found = vim.fn.findfile(fpath, dname .. ';')
+    local found = vim.fn.findfile(fpath:gsub('^%./', ''), dpath .. ';')
     if found == '' then
       return {}
     end
     return {
-      uri = vim.uri_from_fname(vim.fn.expand(dname .. '/' .. found)),
+      uri = vim.uri_from_fname(vim.fn.fnamemodify(found, ':p')),
       range = {
         start = {
           line = 0,

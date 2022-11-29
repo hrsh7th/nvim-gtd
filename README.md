@@ -8,11 +8,15 @@ The breakin changes will be applied without notice.
 # Usage
 
 ```
+---@class gtd.kit.App.Config.Schema
+---@field public sources { name: string }[]
+---@field public get_buffer_path fun(): string
+---@field public on_nothing fun(params: gtd.Params, )
+---@field public on_location fun(params: gtd.Params, location: gtd.kit.LSP.LocationLink)
+---@field public on_locations fun(params: gtd.Params, locations: gtd.kit.LSP.LocationLink[])
+
 require('gtd').setup {
-  sources = {
-    { name = 'lsp' },
-    { name = 'vim' },
-  }
+  ... gtd.kit.App.Config.Schema ...
 }
 
 vim.keymap.set('n', 'gf<CR>', function()

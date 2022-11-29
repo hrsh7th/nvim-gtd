@@ -19,7 +19,8 @@ function Source:execute(definition_params)
   return Async.run(function()
     local locations = {}
     for _, client in ipairs(vim.lsp.get_active_clients({ bufnr = 0 })) do
-      local server_capabilities = client.server_capabilities --[[@as gtd.kit.LSP.ServerCapabilities]]
+      ---@type gtd.kit.LSP.ServerCapabilities
+      local server_capabilities = client.server_capabilities
       if server_capabilities.definitionProvider then
         ---@type gtd.kit.LSP.TextDocumentDefinitionResponse
         local response = Client.new(client):textDocument_definition({

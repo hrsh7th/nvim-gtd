@@ -25,6 +25,10 @@ local Position = require('gtd.kit.LSP.Position')
 local gtd = {}
 
 gtd.config = Config.new({
+  sources = {
+    { name = 'lsp' },
+    { name = 'findup' }
+  },
   get_buffer_path = function()
     return vim.api.nvim_buf_get_name(0)
   end,
@@ -84,7 +88,11 @@ function gtd.exec(params, config)
     for _, source_config in ipairs(config.sources) do
       local source = gtd.registry[source_config.name]
       if source then
-        local locations = gtd._normalize(source:execute(definition_params, context):await())
+        local locations = gtd._normalize(
+          source:execute(definition_params, context):catch(function()
+            return {}
+          end):await()
+        )
         if #locations > 0 then
           return locations
         end
@@ -100,7 +108,7 @@ function gtd.exec(params, config)
       config.on_locations(params, locations)
     end
   end):catch(function(err)
-    print(err)
+    print('[gtd] ' .. tostring(err))
   end)
 end
 
@@ -146,7 +154,7 @@ function gtd._open(params, location)
   end
 end
 
-gtd.register_source('vim', require('gtd.source.vim').new())
+gtd.register_source('findup', require('gtd.source.findup').new())
 gtd.register_source('lsp', require('gtd.source.lsp').new())
 
 return gtd
