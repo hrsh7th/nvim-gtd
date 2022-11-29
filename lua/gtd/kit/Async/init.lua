@@ -50,6 +50,14 @@ function Async.async(runner)
   end
 end
 
+---Create vim.schedule task.
+---@return gtd.kit.Async.AsyncTask
+function Async.schedule()
+  return AsyncTask.new(function(resolve)
+    vim.schedule(resolve)
+  end)
+end
+
 ---Await async task.
 ---@param task gtd.kit.Async.AsyncTask
 ---@return any

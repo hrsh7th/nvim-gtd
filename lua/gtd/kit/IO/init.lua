@@ -194,7 +194,7 @@ function IO.rm(start_path, option)
       end
       IO.walk(start_path, function(err, entry)
         if err then
-          error(err)
+          error('IO.rm: '.. tostring(err))
         end
         if entry.type == 'directory' then
           IO.fs_rmdir(entry.path):await()
@@ -226,13 +226,13 @@ function IO.cp(from, to, option)
       end
       IO.walk(from, function(err, entry)
         if err then
-          error(err)
+          error('IO.cp: '.. tostring(err))
         end
         local new_path = entry.path:gsub(vim.pesc(from), to)
         if entry.type == 'directory' then
           IO.mkdir(new_path, tonumber(stat.mode, 10), { recursive = true }):await()
         else
-          IO.cp(entry.path, new_path):await()
+          IO.fs_copyfile(entry.path, new_path):await()
         end
       end):await()
     else
@@ -309,7 +309,7 @@ function IO.scandir(path, chunk_size)
       end
       table.insert(entries, {
         type = type,
-        path = path .. '/' .. name,
+        path = IO.join(path, name),
       })
     end
     return entries
@@ -320,13 +320,21 @@ end
 ---@param path string
 ---@return string
 function IO.normalize(path)
+  if path == '/' then
+    return path
+  end
+
+  -- absolute path.
   if path:match('^/') then
     return path
   end
+
+  -- homedir.
   if path:match('^~') then
     return (path:gsub('^~', uv.os_homedir()))
   end
 
+  -- resolve relative path.
   local up = vim.is_thread() and uv.cwd() or vim.fn.getcwd()
   up = up:gsub('/$', '')
   while true do
@@ -340,6 +348,14 @@ function IO.normalize(path)
     end
   end
   return up .. '/' .. path
+end
+
+---Join the paths.
+---@param base string
+---@param path string
+---@return string
+function IO.join(base, path)
+  return base:gsub('/$', '') .. '/' .. path:gsub('^/', '')
 end
 
 return IO

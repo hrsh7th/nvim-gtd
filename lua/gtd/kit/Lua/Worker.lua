@@ -35,6 +35,8 @@ function Worker:__call(...)
         return require('gtd.kit.Async.AsyncTask').resolve(assert(loadstring(runner))(unpack(args))):sync()
       end)
 
+      res = vim.json.encode(res)
+
       --Return error or result.
       if not ok then
         return res, nil
@@ -43,9 +45,9 @@ function Worker:__call(...)
       end
     end, function(err, res)
       if err then
-        reject(err)
+        reject(vim.json.decode(err))
       else
-        resolve(res)
+        resolve(vim.json.decode(res))
       end
     end):queue(
       self.runner,

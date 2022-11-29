@@ -2,12 +2,15 @@ local kit = require('gtd.kit')
 local Config = require('gtd.kit.App.Config')
 local LSP = require('gtd.kit.LSP')
 local Async = require('gtd.kit.Async')
+local RegExp = require('gtd.kit.Vim.RegExp')
 local Position = require('gtd.kit.LSP.Position')
+
+local POS_PATTERN = RegExp.get([=[[^[:digit:]]\d\+\%([^[:digit:]]\d\+\)\?]=])
 
 ---@class gtd.kit.App.Config.Schema
 ---@field public sources { name: string }[]
 ---@field public get_buffer_path fun(): string
----@field public on_nothing fun(params: gtd.Params, )
+---@field public on_nothing fun(params: gtd.Params)
 ---@field public on_location fun(params: gtd.Params, location: gtd.kit.LSP.LocationLink)
 ---@field public on_locations fun(params: gtd.Params, locations: gtd.kit.LSP.LocationLink[])
 
@@ -21,13 +24,17 @@ local Position = require('gtd.kit.LSP.Position')
 
 ---@class gtd.Context
 ---@field public bufnr integer
+---@field public text string
+---@field public fname string
+---@field public row integer # 0-origin utf8 byte index
+---@field public col integer # 0-origin utf8 byte index
 
 local gtd = {}
 
 gtd.config = Config.new({
   sources = {
     { name = 'lsp' },
-    { name = 'findup' }
+    { name = 'findup' },
   },
   get_buffer_path = function()
     return vim.api.nvim_buf_get_name(0)
@@ -78,21 +85,25 @@ function gtd.exec(params, config)
     textDocument = {
       uri = vim.uri_from_fname(config.get_buffer_path())
     },
-    position = Position.cursor(LSP.PositionEncodingKind.UTF16),
-  }
-  ---@type gtd.Context
-  local context = {
-    bufnr = vim.api.nvim_get_current_buf()
+    position = Position.cursor(LSP.PositionEncodingKind.UTF8),
   }
   Async.run(function()
+    local context = gtd._context()
     for _, source_config in ipairs(config.sources) do
       local source = gtd.registry[source_config.name]
       if source then
-        local locations = gtd._normalize(
-          source:execute(definition_params, context):catch(function()
-            return {}
-          end):await()
-        )
+        local encoding_fixed_params = kit.merge({
+          position = Position.to(
+            context.text,
+            definition_params.position,
+            LSP.PositionEncodingKind.UTF8,
+            source:get_position_encoding_kind()
+          )
+        }, definition_params)
+        local locations = source:execute(encoding_fixed_params, context)
+        locations = locations:catch(function() return {} end)
+        locations = locations:await()
+        locations = gtd._normalize(locations, context, source:get_position_encoding_kind())
         if #locations > 0 then
           return locations
         end
@@ -114,8 +125,10 @@ end
 
 ---Normalize textDocument/definition response.
 ---@param locations gtd.kit.LSP.Location | gtd.kit.LSP.LocationLink | (gtd.kit.LSP.Location | gtd.kit.LSP.LocationLink)[] | nil
+---@param context gtd.Context
+---@param position_encoding_kind gtd.kit.LSP.PositionEncodingKind
 ---@return gtd.kit.LSP.LocationLink[]
-function gtd._normalize(locations)
+function gtd._normalize(locations, context, position_encoding_kind)
   if not locations then
     return {}
   end
@@ -128,14 +141,29 @@ function gtd._normalize(locations)
   local new_locations = {}
   for _, location in ipairs(locations) do
     if location and location.uri then
-      table.insert(new_locations, {
+      location = {
         targetUri = location.uri,
         targetRange = location.range,
         targetSelectionRange = location.range,
-      })
-    else
-      table.insert(new_locations, location)
+      }
     end
+    local start = Position.to(
+      context.text,
+      location.targetRange.start,
+      position_encoding_kind,
+      LSP.PositionEncodingKind.UTF8
+    )
+    table.insert(new_locations, {
+      targetUri = location.targetUri,
+      targetRange = {
+        start = start,
+        ['end'] = start
+      },
+      targetSelectionRange = {
+        start = start,
+        ['end'] = start
+      },
+    })
   end
   return new_locations
 end
@@ -154,7 +182,35 @@ function gtd._open(params, location)
   end
 end
 
+---@return gtd.Context
+function gtd._context()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local text = vim.api.nvim_get_current_line()
+  local fname, _, fname_e = RegExp.extract_at(text or '', [[\f\+]], vim.api.nvim_win_get_cursor(0)[2] + 1)
+  local row, col = 0, 0
+  if fname ~= '' then
+    local pos_s, pos_e = POS_PATTERN:match_str(text:sub(fname_e + 1))
+    if pos_s and pos_e then
+      local extracted = text:sub(fname_e + 1):sub(pos_s, pos_e)
+      if extracted:match('^%d+') then
+        row = tonumber(extracted:match('^%d+'), 10) - 1
+      end
+      if extracted:match('%d+$') then
+        col = tonumber(extracted:match('%d+$'), 10) - 1
+      end
+    end
+  end
+  return {
+    bufnr = bufnr,
+    text = text,
+    fname = fname,
+    row = row,
+    col = col,
+  }
+end
+
 gtd.register_source('findup', require('gtd.source.findup').new())
+gtd.register_source('walk', require('gtd.source.walk').new())
 gtd.register_source('lsp', require('gtd.source.lsp').new())
 
 return gtd

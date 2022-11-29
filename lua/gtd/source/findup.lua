@@ -1,11 +1,18 @@
+local LSP = require('gtd.kit.LSP')
 local Async = require('gtd.kit.Async')
-local RegExp = require('gtd.kit.Vim.RegExp')
 
 local Source = {}
 Source.__index = Source
 
+---Create new source.
 function Source.new()
   return setmetatable({}, Source)
+end
+
+---Return LSP.PositionEncodingKind.
+---@return gtd.kit.LSP.PositionEncodingKind
+function Source:get_position_encoding_kind()
+  return LSP.PositionEncodingKind.UTF8
 end
 
 ---@param definition_params gtd.kit.LSP.DefinitionParams
@@ -13,32 +20,28 @@ end
 ---@return gtd.kit.LSP.TextDocumentDefinitionResponse
 function Source:execute(definition_params, context)
   return Async.run(function()
-    local dpath = vim.fs.dirname(vim.uri_to_fname(definition_params.textDocument.uri))
-    local texts = vim.api.nvim_buf_get_lines(
-      context.bufnr,
-      definition_params.position.line,
-      definition_params.position.line + 1,
-      false
-    )
-    local fpath = RegExp.extract_at(texts[1] or '', [[\f\+]], definition_params.position.character + 1)
-    if fpath == '' then
+    if context.fname == '' then
       return {}
     end
-    local found = vim.fn.findfile(fpath:gsub('^%./', ''), dpath .. ';')
+
+    -- Search file via `findfile`.
+    local dpath = vim.fs.dirname(vim.uri_to_fname(definition_params.textDocument.uri))
+    local found = vim.fn.findfile(context.fname:gsub('^%./', ''), dpath .. ';')
     if found == '' then
       return {}
     end
+
     return {
       uri = vim.uri_from_fname(vim.fn.fnamemodify(found, ':p')),
       range = {
         start = {
-          line = 0,
-          character = 0
+          line = context.row,
+          character = context.col,
         },
         ['end'] = {
-          line = 0,
-          character = 0
-        }
+          line = context.row,
+          character = context.col,
+        },
       }
     }
   end)
