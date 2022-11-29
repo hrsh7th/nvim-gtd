@@ -8,7 +8,7 @@ local Position = require('gtd.kit.LSP.Position')
 local POS_PATTERN = RegExp.get([=[[^[:digit:]]\d\+\%([^[:digit:]]\d\+\)\?]=])
 
 ---@class gtd.kit.App.Config.Schema
----@field public sources { name: string }[]
+---@field public sources { name: string, option?: table }[]
 ---@field public get_buffer_path fun(): string
 ---@field public on_nothing fun(params: gtd.Params)
 ---@field public on_location fun(params: gtd.Params, location: gtd.kit.LSP.LocationLink)
@@ -17,7 +17,7 @@ local POS_PATTERN = RegExp.get([=[[^[:digit:]]\d\+\%([^[:digit:]]\d\+\)\?]=])
 ---@class gtd.Source
 ---@field public name string
 ---@field public get_position_encoding_kind? fun(): gtd.kit.LSP.PositionEncodingKind
----@field public execute fun(self: gtd.Source, params: gtd.kit.LSP.DefinitionParams, context: gtd.Context): gtd.kit.Async.AsyncTask
+---@field public execute fun(self: gtd.Source, params: gtd.kit.LSP.DefinitionParams, context: gtd.Context, option?: table): gtd.kit.Async.AsyncTask
 
 ---@class gtd.Params
 ---@field public command string
@@ -100,7 +100,7 @@ function gtd.exec(params, config)
             source:get_position_encoding_kind()
           )
         }, definition_params)
-        local locations = source:execute(encoding_fixed_params, context)
+        local locations = source:execute(encoding_fixed_params, context, source_config.option)
         locations = locations:catch(function() return {} end)
         locations = locations:await()
         locations = gtd._normalize(locations, context, source:get_position_encoding_kind())
