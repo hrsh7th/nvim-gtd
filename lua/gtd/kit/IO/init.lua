@@ -95,6 +95,18 @@ IO.fs_scandir = Async.promisify(uv.fs_scandir)
 ---@type fun(path: string): gtd.kit.Async.AsyncTask
 IO.fs_realpath = Async.promisify(uv.fs_realpath)
 
+---Return if the path is directory.
+---@param path string
+---@return gtd.kit.Async.AsyncTask
+function IO.is_directory(path)
+  path = IO.normalize(path)
+  return Async.run(function()
+    return IO.fs_stat(path):catch(function()
+      return {}
+    end):await().type == 'directory'
+  end)
+end
+
 ---Read file.
 ---@param path string
 ---@param chunk_size? integer
@@ -169,7 +181,7 @@ function IO.mkdir(path, mode, option)
           break
         end
         table.insert(not_exists, 1, current)
-        current = vim.fs.dirname(current)
+        current = IO.dirname(current)
       end
       for _, dir in ipairs(not_exists) do
         IO.fs_mkdir(dir, mode):await()
@@ -194,7 +206,7 @@ function IO.rm(start_path, option)
       end
       IO.walk(start_path, function(err, entry)
         if err then
-          error('IO.rm: '.. tostring(err))
+          error('IO.rm: ' .. tostring(err))
         end
         if entry.type == 'directory' then
           IO.fs_rmdir(entry.path):await()
@@ -226,7 +238,7 @@ function IO.cp(from, to, option)
       end
       IO.walk(from, function(err, entry)
         if err then
-          error('IO.cp: '.. tostring(err))
+          error('IO.cp: ' .. tostring(err))
         end
         local new_path = entry.path:gsub(vim.pesc(from), to)
         if entry.type == 'directory' then
@@ -324,30 +336,30 @@ function IO.normalize(path)
     return path
   end
 
-  -- absolute path.
-  if path:match('^/') then
-    return path
+  -- homedir.
+  if path:sub(1, 1) == '~' then
+    path = IO.join(uv.os_homedir(), path:sub(2))
   end
 
-  -- homedir.
-  if path:match('^~') then
-    return (path:gsub('^~', uv.os_homedir()))
+  -- absolute.
+  if path:sub(1, 1) == '/' then
+    return path:sub(-1) == '/' and path:sub(1, -2) or path
   end
 
   -- resolve relative path.
-  local up = vim.is_thread() and uv.cwd() or vim.fn.getcwd()
-  up = up:gsub('/$', '')
+  local up = uv.cwd()
+  up = up:sub(-1) == '/' and up:sub(1, -2) or up
   while true do
-    if path:match('^%.%./') then
-      path = path:gsub('^%.%./', '')
-      up = up:gsub('/[^/]+/?$', '')
-    elseif path:match('^%.?/') then
-      path = path:gsub('^%.?/', '')
+    if path:sub(1, 3) == '../' then
+      path = path:sub(4)
+      up = IO.dirname(up)
+    elseif path:sub(1, 2) == './' then
+      path = path:sub(3)
     else
       break
     end
   end
-  return up .. '/' .. path
+  return IO.join(up, path)
 end
 
 ---Join the paths.
@@ -355,7 +367,20 @@ end
 ---@param path string
 ---@return string
 function IO.join(base, path)
-  return base:gsub('/$', '') .. '/' .. path:gsub('^/', '')
+  if base:sub(-1) == '/' then
+    base = base:sub(1, -2)
+  end
+  if path:sub(1, 1) == '/' then
+    path = path:sub(2)
+  end
+  return base .. '/' .. path
+end
+
+---Return the path of the current working directory.
+---@param path string
+---@return string
+function IO.dirname(path)
+  return (path:gsub('/[^/]+/?$', ''))
 end
 
 return IO

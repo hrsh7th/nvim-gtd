@@ -1,6 +1,8 @@
 local kit = require('gtd.kit')
+local LSP = require('___kit___.kit.LSP')
 local Async = require('gtd.kit.Async')
 local Client = require('gtd.kit.LSP.Client')
+local Position = require('gtd.kit.LSP.Position')
 
 local Source = {}
 Source.__index = Source
@@ -11,11 +13,12 @@ function Source.new()
 end
 
 function Source:get_position_encoding_kind()
-  return 'utf-8'
+  return LSP.PositionEncodingKind.UTF8
 end
 
 ---@param definition_params gtd.kit.LSP.DefinitionParams
-function Source:execute(definition_params)
+---@param context gtd.Context
+function Source:execute(definition_params, context)
   return Async.run(function()
     local locations = {}
     for _, client in ipairs(vim.lsp.get_active_clients({ bufnr = 0 })) do
@@ -25,7 +28,12 @@ function Source:execute(definition_params)
         ---@type gtd.kit.LSP.TextDocumentDefinitionResponse
         local response = Client.new(client):textDocument_definition({
           textDocument = definition_params.textDocument,
-          position = definition_params.position, -- TODO: Fix position encoding
+          position = Position.to(
+            context.text,
+            definition_params.position,
+            self:get_position_encoding_kind(),
+            server_capabilities.positionEncoding or client.offset_encoding or LSP.PositionEncodingKind.UTF32
+          ),
         }):await()
         if response then
           if response.range then
