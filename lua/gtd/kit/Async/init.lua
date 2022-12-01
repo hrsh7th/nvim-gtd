@@ -48,6 +48,20 @@ function Async.async(runner)
   end
 end
 
+---Await async task.
+---@param task gtd.kit.Async.AsyncTask
+---@return any
+function Async.await(task)
+  if not Async.___threads___[coroutine.running()] then
+    error('`Async.await` must be called in async context.')
+  end
+  local ok, res = coroutine.yield(AsyncTask.resolve(task))
+  if not ok then
+    error(res)
+  end
+  return res
+end
+
 ---Create vim.schedule task.
 ---@return gtd.kit.Async.AsyncTask
 function Async.schedule()
@@ -56,18 +70,13 @@ function Async.schedule()
   end)
 end
 
----Await async task.
----@param task gtd.kit.Async.AsyncTask
----@return any
-function Async.await(task)
-  if not Async.___threads___[coroutine.running()] then
-    error('`Async.await` must be called in async function.')
-  end
-  local ok, res = coroutine.yield(AsyncTask.resolve(task))
-  if not ok then
-    error(res)
-  end
-  return res
+---Create vim.defer_fn task.
+---@param timeout integer
+---@return gtd.kit.Async.AsyncTask
+function Async.timeout(timeout)
+  return AsyncTask.new(function(resolve)
+    vim.defer_fn(resolve, timeout)
+  end)
 end
 
 ---Create async function from callback function.

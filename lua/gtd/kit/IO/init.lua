@@ -262,44 +262,51 @@ function IO.walk(start_path, callback, option)
   option = option or {}
   option.postorder = option.postorder or false
   return Async.run(function()
-    local function walk(path)
-      local ok, err = pcall(function()
-        for _, entry in ipairs(IO.scandir(path):await()) do
-          if entry.type == 'directory' then
-            if not option.postorder then
-              if callback(nil, entry) ~= IO.WalkStatus.SkipDir then
-                walk(entry.path)
-              end
-            else
-              walk(entry.path)
-              callback(nil, entry)
-            end
-          else
-            callback(nil, entry)
-          end
-        end
+    local function walk_pre(dir)
+      local ok, iter_entries = pcall(function()
+        return IO.iter_scandir(dir.path):await()
       end)
       if not ok then
-        callback(err, { path = path, type = 'directory' })
+        callback(iter_entries, dir)
+        return
+      end
+      if callback(nil, dir) == IO.WalkStatus.SkipDir then
+        return
+      end
+      for entry in iter_entries do
+        if entry.type == 'directory' then
+          walk_pre(entry)
+        else
+          callback(nil, entry)
+        end
       end
     end
 
-    local ok, err = pcall(function()
-      local stat = IO.fs_stat(start_path):await()
-      if stat.type ~= 'directory' then
-        error(('IO.walk: `%s` is not a directory.'):format(start_path))
+    local function walk_post(dir)
+      local ok, iter_entries = pcall(function()
+        return IO.iter_scandir(dir.path):await()
+      end)
+      if not ok then
+        callback(iter_entries, dir)
+        return
       end
-      if not option.postorder then
-        if callback(nil, { path = start_path, type = 'directory' }) ~= IO.WalkStatus.SkipDir then
-          walk(start_path)
+      for entry in iter_entries do
+        if entry.type == 'directory' then
+          walk_post(entry)
+        else
+          callback(nil, entry)
         end
-      else
-        walk(start_path)
-        callback(nil, { path = start_path, type = 'directory' })
       end
-    end)
-    if not ok then
-      callback(err, { path = start_path, type = 'directory' })
+      callback(nil, dir)
+    end
+
+    if not IO.is_directory(start_path) then
+      error(('IO.walk: `%s` is not a directory.'):format(start_path))
+    end
+    if option.postorder then
+      walk_post({ path = start_path, type = 'directory' })
+    else
+      walk_pre({ path = start_path, type = 'directory' })
     end
   end)
 end
@@ -325,6 +332,27 @@ function IO.scandir(path, chunk_size)
       })
     end
     return entries
+  end)
+end
+
+---Scan directory entries.
+---@param path any
+---@param chunk_size any
+---@return gtd.kit.Async.AsyncTask
+function IO.iter_scandir(path, chunk_size)
+  path = IO.normalize(path)
+  chunk_size = chunk_size or 256
+  return Async.run(function()
+    local fd = IO.fs_scandir(path):await()
+    return function()
+      local name, type = uv.fs_scandir_next(fd)
+      if name then
+        return {
+          type = type,
+          path = IO.join(path, name),
+        }
+      end
+    end
   end)
 end
 

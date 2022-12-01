@@ -1,6 +1,8 @@
 local uv = require('luv')
 local Lua = require('gtd.kit.Lua')
 
+local is_thread = vim.is_thread()
+
 ---@class gtd.kit.Async.AsyncTask
 ---@field private value any
 ---@field private status gtd.kit.Async.AsyncTask.Status
@@ -39,14 +41,14 @@ function AsyncTask.all(tasks)
     local count = 0
     for i, task in ipairs(tasks) do
       AsyncTask.resolve(task)
-          :next(function(value)
-            values[i] = value
-            count = count + 1
-            if #tasks == count then
-              resolve(values)
-            end
-          end)
-          :catch(reject)
+        :next(function(value)
+          values[i] = value
+          count = count + 1
+          if #tasks == count then
+            resolve(values)
+          end
+        end)
+        :catch(reject)
     end
   end)
 end
@@ -131,7 +133,7 @@ end
 function AsyncTask:sync(timeout)
   self.synced = true
 
-  if vim.is_thread() then
+  if is_thread then
     while true do
       if self.status ~= AsyncTask.Status.Pending then
         break

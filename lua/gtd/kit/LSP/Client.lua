@@ -28,7 +28,7 @@ function Client:textDocument_implementation(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -48,7 +48,7 @@ function Client:textDocument_typeDefinition(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -68,7 +68,7 @@ function Client:workspace_workspaceFolders(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -90,7 +90,7 @@ function Client:workspace_configuration(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -110,7 +110,7 @@ function Client:textDocument_documentColor(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -130,7 +130,7 @@ function Client:textDocument_colorPresentation(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -150,7 +150,7 @@ function Client:textDocument_foldingRange(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -170,7 +170,7 @@ function Client:textDocument_declaration(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -190,7 +190,7 @@ function Client:textDocument_selectionRange(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -210,7 +210,7 @@ function Client:window_workDoneProgress_create(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -230,7 +230,7 @@ function Client:textDocument_prepareCallHierarchy(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -250,7 +250,7 @@ function Client:callHierarchy_incomingCalls(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -270,7 +270,7 @@ function Client:callHierarchy_outgoingCalls(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -290,7 +290,7 @@ function Client:textDocument_semanticTokens_full(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -310,7 +310,7 @@ function Client:textDocument_semanticTokens_full_delta(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -330,7 +330,7 @@ function Client:textDocument_semanticTokens_range(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -350,7 +350,7 @@ function Client:workspace_semanticTokens_refresh(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -370,7 +370,7 @@ function Client:window_showDocument(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -390,7 +390,7 @@ function Client:textDocument_linkedEditingRange(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -410,7 +410,7 @@ function Client:workspace_willCreateFiles(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -430,7 +430,7 @@ function Client:workspace_willRenameFiles(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -450,7 +450,7 @@ function Client:workspace_willDeleteFiles(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -470,7 +470,7 @@ function Client:textDocument_moniker(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -490,7 +490,7 @@ function Client:textDocument_prepareTypeHierarchy(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -510,7 +510,7 @@ function Client:typeHierarchy_supertypes(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -530,7 +530,7 @@ function Client:typeHierarchy_subtypes(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -550,7 +550,7 @@ function Client:textDocument_inlineValue(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -570,7 +570,7 @@ function Client:workspace_inlineValue_refresh(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -590,7 +590,7 @@ function Client:textDocument_inlayHint(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -610,7 +610,7 @@ function Client:inlayHint_resolve(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -630,7 +630,7 @@ function Client:workspace_inlayHint_refresh(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -650,7 +650,7 @@ function Client:textDocument_diagnostic(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -670,7 +670,7 @@ function Client:workspace_diagnostic(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -690,7 +690,7 @@ function Client:workspace_diagnostic_refresh(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -710,7 +710,7 @@ function Client:client_registerCapability(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -730,7 +730,7 @@ function Client:client_unregisterCapability(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -750,7 +750,7 @@ function Client:initialize(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -770,7 +770,7 @@ function Client:shutdown(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -790,7 +790,7 @@ function Client:window_showMessageRequest(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -810,7 +810,7 @@ function Client:textDocument_willSaveWaitUntil(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -830,7 +830,7 @@ function Client:textDocument_completion(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -850,7 +850,7 @@ function Client:completionItem_resolve(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -870,7 +870,7 @@ function Client:textDocument_hover(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -890,7 +890,7 @@ function Client:textDocument_signatureHelp(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -910,7 +910,7 @@ function Client:textDocument_definition(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -930,7 +930,7 @@ function Client:textDocument_references(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -950,7 +950,7 @@ function Client:textDocument_documentHighlight(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -970,7 +970,7 @@ function Client:textDocument_documentSymbol(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -990,7 +990,7 @@ function Client:textDocument_codeAction(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1010,7 +1010,7 @@ function Client:codeAction_resolve(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1030,7 +1030,7 @@ function Client:workspace_symbol(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1050,7 +1050,7 @@ function Client:workspaceSymbol_resolve(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1070,7 +1070,7 @@ function Client:textDocument_codeLens(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1090,7 +1090,7 @@ function Client:codeLens_resolve(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1110,7 +1110,7 @@ function Client:workspace_codeLens_refresh(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1130,7 +1130,7 @@ function Client:textDocument_documentLink(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1150,7 +1150,7 @@ function Client:documentLink_resolve(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1170,7 +1170,7 @@ function Client:textDocument_formatting(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1190,7 +1190,7 @@ function Client:textDocument_rangeFormatting(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1210,7 +1210,7 @@ function Client:textDocument_onTypeFormatting(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1230,7 +1230,7 @@ function Client:textDocument_rename(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1250,7 +1250,7 @@ function Client:textDocument_prepareRename(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1270,7 +1270,7 @@ function Client:workspace_executeCommand(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
@@ -1290,7 +1290,7 @@ function Client:workspace_applyEdit(params)
     end)
     reject_ = reject
   end)
-  function task:cancel()
+  function task.cancel()
     that.client.cancel_request(request_id)
     reject_(LSP.ErrorCodes.RequestCancelled)
   end
