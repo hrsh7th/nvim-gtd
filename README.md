@@ -12,10 +12,10 @@ The breaking changes will be applied without notice.
 
 # Usage
 
-```
+```lua
 ---@class gtd.kit.App.Config.Schema
----@field public sources { name: string }[]
----@field public get_buffer_path fun(): string
+---@field public sources { name: string, option?: table }[] # Specify the source that will be used to search for the definition
+---@field public get_buffer_path fun(): string # Specify the function to get the current buffer path. It's useful for searching path from terminal buffer etc.
 ---@field public on_cancel fun(params: gtd.Params)
 ---@field public on_nothing fun(params: gtd.Params)
 ---@field public on_location fun(params: gtd.Params, location: gtd.kit.LSP.LocationLink)
