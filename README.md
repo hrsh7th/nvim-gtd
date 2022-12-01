@@ -16,6 +16,7 @@ The breaking changes will be applied without notice.
 ---@class gtd.kit.App.Config.Schema
 ---@field public sources { name: string }[]
 ---@field public get_buffer_path fun(): string
+---@field public on_cancel fun(params: gtd.Params)
 ---@field public on_nothing fun(params: gtd.Params)
 ---@field public on_location fun(params: gtd.Params, location: gtd.kit.LSP.LocationLink)
 ---@field public on_locations fun(params: gtd.Params, locations: gtd.kit.LSP.LocationLink[])

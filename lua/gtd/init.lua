@@ -10,6 +10,7 @@ local POS_PATTERN = RegExp.get([=[[^[:digit:]]\d\+\%([^[:digit:]]\d\+\)\?]=])
 ---@class gtd.kit.App.Config.Schema
 ---@field public sources { name: string, option?: table }[]
 ---@field public get_buffer_path fun(): string
+---@field public on_cancel fun(params: gtd.Params)
 ---@field public on_nothing fun(params: gtd.Params)
 ---@field public on_location fun(params: gtd.Params, location: gtd.kit.LSP.LocationLink)
 ---@field public on_locations fun(params: gtd.Params, locations: gtd.kit.LSP.LocationLink[])
@@ -23,11 +24,13 @@ local POS_PATTERN = RegExp.get([=[[^[:digit:]]\d\+\%([^[:digit:]]\d\+\)\?]=])
 ---@field public command string
 
 ---@class gtd.Context
+---@field public mode string
 ---@field public bufnr integer
 ---@field public text string
 ---@field public fname string
 ---@field public row integer # 0-origin utf8 byte index
 ---@field public col integer # 0-origin utf8 byte index
+---@field public is_obsolete fun(): boolean
 
 local gtd = {}
 
@@ -38,6 +41,9 @@ gtd.config = Config.new({
   },
   get_buffer_path = function()
     return vim.api.nvim_buf_get_name(0)
+  end,
+  on_cancel = function(_)
+    print('Canceled')
   end,
   on_nothing = function(_)
     print('Nothing found')
@@ -87,8 +93,8 @@ function gtd.exec(params, config)
     },
     position = Position.cursor(LSP.PositionEncodingKind.UTF8),
   }
+  local context = gtd._context()
   Async.run(function()
-    local context = gtd._context()
     for _, source_config in ipairs(config.sources) do
       local source = gtd.registry[source_config.name]
       if source then
@@ -111,7 +117,9 @@ function gtd.exec(params, config)
     end
     return {}
   end):next(function(locations --[[ @as gtd.kit.LSP.LocationLink[] ]])
-    if #locations == 0 then
+    if context.is_obsolete() then
+      config.on_cancel(params)
+    elseif #locations == 0 then
       config.on_nothing(params)
     elseif #locations == 1 then
       config.on_location(params, locations[1])
@@ -188,7 +196,7 @@ function gtd._context()
   local text = vim.api.nvim_get_current_line()
   local fname, _, fname_e = RegExp.extract_at(text or '', [[\f\+]], vim.api.nvim_win_get_cursor(0)[2] + 1)
   local row, col = 0, 0
-  if fname ~= '' then
+  if fname then
     local pos_s, pos_e = POS_PATTERN:match_str(text:sub(fname_e + 1))
     if pos_s and pos_e then
       local extracted = text:sub(fname_e + 1):sub(pos_s, pos_e)
@@ -201,11 +209,16 @@ function gtd._context()
     end
   end
   return {
+    mode = vim.api.nvim_get_mode().mode,
     bufnr = bufnr,
     text = text,
     fname = fname,
     row = row,
     col = col,
+    is_obsolete = function()
+      local now = gtd._context()
+      return now.mode ~= 'n' or now.bufnr ~= bufnr
+    end
   }
 end
 
