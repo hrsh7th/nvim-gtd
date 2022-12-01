@@ -20,7 +20,7 @@ end
 ---@return gtd.kit.LSP.TextDocumentDefinitionResponse
 function Source:execute(definition_params, context)
   return Async.run(function()
-    if context.fname == '' then
+    if not context.fname then
       return {}
     end
 

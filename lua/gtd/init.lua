@@ -27,7 +27,7 @@ local POS_PATTERN = RegExp.get([=[[^[:digit:]]\d\+\%([^[:digit:]]\d\+\)\?]=])
 ---@field public mode string
 ---@field public bufnr integer
 ---@field public text string
----@field public fname string
+---@field public fname? string
 ---@field public row integer # 0-origin utf8 byte index
 ---@field public col integer # 0-origin utf8 byte index
 ---@field public is_obsolete fun(): boolean
@@ -117,10 +117,10 @@ function gtd.exec(params, config)
     end
     return {}
   end):next(function(locations --[[ @as gtd.kit.LSP.LocationLink[] ]])
-    if context.is_obsolete() then
-      config.on_cancel(params)
-    elseif #locations == 0 then
+    if #locations == 0 then
       config.on_nothing(params)
+    elseif context.is_obsolete() then
+      config.on_cancel(params)
     elseif #locations == 1 then
       config.on_location(params, locations[1])
     else

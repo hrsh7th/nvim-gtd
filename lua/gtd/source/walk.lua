@@ -36,7 +36,7 @@ function Source:execute(definition_params, context, option)
   })
 
   return Async.run(function()
-    if context.fname == '' then
+    if not context.fname then
       return {}
     end
 
