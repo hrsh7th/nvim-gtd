@@ -1,5 +1,5 @@
 local kit = require('gtd.kit')
-local LSP = require('___kit___.kit.LSP')
+local LSP = require('gtd.kit.LSP')
 local Async = require('gtd.kit.Async')
 local Client = require('gtd.kit.LSP.Client')
 local Position = require('gtd.kit.LSP.Position')
