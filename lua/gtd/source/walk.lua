@@ -6,7 +6,6 @@ local Async = require('gtd.kit.Async')
 ---@class gtd.source.walk.Option
 ---@field public root_markers string[]
 ---@field public ignore_patterns string[] # The Lua pattern strings.
----@field public converter fun(context: gtd.Context): string
 
 local Source = {}
 Source.__index = Source
@@ -73,7 +72,7 @@ function Source:execute(definition_params, context, option)
       end):next(function()
         return paths
       end)
-    end)(root_dir, option.converter(context), option.ignore_patterns):await()
+    end)(root_dir, context, option.ignore_patterns):await()
 
     Async.schedule():await()
 

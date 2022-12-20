@@ -61,5 +61,7 @@ Find definitions via `vim.fn.findfile` with `;` flag.
 Traverse all filepaths under project.
 The ignore pattern isn't implemented yet so it might be slow.
 
-
+|*option-name*|*type*|*description*|
+|root_markers|string[]|Specify root markers like `{ '.git', 'tsconfig.json' }`.|
+|ignore_patterns|string[]|Specify ignore patterns like `{ '/node_modules', '/.git' }`|
 
