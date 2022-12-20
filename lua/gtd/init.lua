@@ -10,6 +10,7 @@ local POS_PATTERN = RegExp.get([=[[^[:digit:]]\d\+\%([^[:digit:]]\d\+\)\?]=])
 ---@class gtd.kit.App.Config.Schema
 ---@field public sources { name: string, option?: table }[] # Specify the source that will be used to search for the definition
 ---@field public get_buffer_path fun(): string # Specify the function to get the current buffer path. It's useful for searching path from terminal buffer etc.
+---@field public on_context fun(context: gtd.Context) # Modify context on user-land.
 ---@field public on_cancel fun(params: gtd.Params)
 ---@field public on_nothing fun(params: gtd.Params)
 ---@field public on_location fun(params: gtd.Params, location: gtd.kit.LSP.LocationLink)
@@ -41,6 +42,8 @@ gtd.config = Config.new({
   },
   get_buffer_path = function()
     return vim.api.nvim_buf_get_name(0)
+  end,
+  on_context = function(_)
   end,
   on_cancel = function(_)
     print('Canceled')
@@ -94,6 +97,7 @@ function gtd.exec(params, config)
     position = Position.cursor(LSP.PositionEncodingKind.UTF8),
   }
   local context = gtd._context()
+  config.on_context(context)
   Async.run(function()
     for _, source_config in ipairs(config.sources) do
       local source = gtd.registry[source_config.name]
@@ -146,6 +150,8 @@ function gtd._normalize(locations, context, position_encoding_kind)
   if locations.targetUri then
     locations = { locations }
   end
+
+  ---@type table<string, gtd.kit.LSP.LocationLink>
   local new_locations = {}
   for _, location in ipairs(locations) do
     if location and location.uri then
@@ -161,7 +167,7 @@ function gtd._normalize(locations, context, position_encoding_kind)
       position_encoding_kind,
       LSP.PositionEncodingKind.UTF8
     )
-    table.insert(new_locations, {
+    new_locations[location.targetUri] = {
       targetUri = location.targetUri,
       targetRange = {
         start = start,
@@ -171,16 +177,20 @@ function gtd._normalize(locations, context, position_encoding_kind)
         start = start,
         ['end'] = start
       },
-    })
+    }
   end
-  return new_locations
+  return vim.tbl_values(new_locations)
 end
 
 ---Open LocationLink.
 ---@param params gtd.Params
 ---@param location gtd.kit.LSP.LocationLink
 function gtd._open(params, location)
-  vim.cmd[params.command] { args = { vim.uri_to_fname(location.targetUri) } }
+  vim.cmd[params.command]({
+    args = {
+      vim.uri_to_fname(location.targetUri)
+    }
+  })
   if location.targetSelectionRange then
     local row = location.targetSelectionRange.start.line + 1
     local col = location.targetSelectionRange.start.character + 1
