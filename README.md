@@ -59,7 +59,6 @@ Find definitions via `vim.fn.findfile` with `;` flag.
 (Default: disabled)
 
 Traverse all filepaths under project.
-The ignore pattern isn't implemented yet so it might be slow.
 
 |option-name|type|description|
 |-----------|----|-----------|
