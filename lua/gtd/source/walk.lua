@@ -29,9 +29,6 @@ function Source:execute(definition_params, context, option)
   option = kit.merge(option or {}, {
     root_markers = { '.git', 'tsconfig.json', 'package.json' },
     ignore_patterns = { '/node_modules', '/.git' },
-    converter = function(context)
-      return context.fname
-    end
   })
 
   return Async.run(function()
@@ -72,7 +69,7 @@ function Source:execute(definition_params, context, option)
       end):next(function()
         return paths
       end)
-    end)(root_dir, context, option.ignore_patterns):await()
+    end)(root_dir, self:_normalize_fname(context), option.ignore_patterns):await()
 
     Async.schedule():await()
 
@@ -92,6 +89,14 @@ function Source:execute(definition_params, context, option)
       }
     end, paths)
   end)
+end
+
+---@param context gtd.Context
+---@return string
+function Source:_normalize_fname(context)
+  local fname = context.fname or ''
+  fname = fname:gsub('^[%./]*/', '')
+  return fname
 end
 
 return Source
