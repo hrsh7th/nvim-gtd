@@ -1,6 +1,8 @@
 local uv = require('luv')
 local Async = require('gtd.kit.Async')
 
+local is_windows = uv.os_uname().sysname:lower() == 'windows'
+
 ---@see https://github.com/luvit/luvit/blob/master/deps/fs.lua
 local IO = {}
 
@@ -48,6 +50,7 @@ IO.AccessMode = {
 ---@enum gtd.kit.IO.WalkStatus
 IO.WalkStatus = {
   SkipDir = 1,
+  Break = 2,
 }
 
 ---@type fun(path: string): gtd.kit.Async.AsyncTask
@@ -267,17 +270,23 @@ function IO.walk(start_path, callback, option)
         return IO.iter_scandir(dir.path):await()
       end)
       if not ok then
-        callback(iter_entries, dir)
-        return
+        return callback(iter_entries, dir)
       end
-      if callback(nil, dir) == IO.WalkStatus.SkipDir then
+      local status = callback(nil, dir)
+      if status == IO.WalkStatus.SkipDir then
         return
+      elseif status == IO.WalkStatus.Break then
+        return status
       end
       for entry in iter_entries do
         if entry.type == 'directory' then
-          walk_pre(entry)
+          if walk_pre(entry) == IO.WalkStatus.Break then
+            return IO.WalkStatus.Break
+          end
         else
-          callback(nil, entry)
+          if callback(nil, entry) == IO.WalkStatus.Break then
+            return IO.WalkStatus.Break
+          end
         end
       end
     end
@@ -287,17 +296,20 @@ function IO.walk(start_path, callback, option)
         return IO.iter_scandir(dir.path):await()
       end)
       if not ok then
-        callback(iter_entries, dir)
-        return
+        return callback(iter_entries, dir)
       end
       for entry in iter_entries do
         if entry.type == 'directory' then
-          walk_post(entry)
+          if walk_post(entry) == IO.WalkStatus.Break then
+            return IO.WalkStatus.Break
+          end
         else
-          callback(nil, entry)
+          if callback(nil, entry) == IO.WalkStatus.Break then
+            return IO.WalkStatus.Break
+          end
         end
       end
-      callback(nil, dir)
+      return callback(nil, dir)
     end
 
     if not IO.is_directory(start_path) then
@@ -313,11 +325,9 @@ end
 
 ---Scan directory entries.
 ---@param path string
----@param chunk_size? integer
 ---@return gtd.kit.Async.AsyncTask
-function IO.scandir(path, chunk_size)
+function IO.scandir(path)
   path = IO.normalize(path)
-  chunk_size = chunk_size or 256
   return Async.run(function()
     local fd = IO.fs_scandir(path):await()
     local entries = {}
@@ -337,11 +347,9 @@ end
 
 ---Scan directory entries.
 ---@param path any
----@param chunk_size any
 ---@return gtd.kit.Async.AsyncTask
-function IO.iter_scandir(path, chunk_size)
+function IO.iter_scandir(path)
   path = IO.normalize(path)
-  chunk_size = chunk_size or 256
   return Async.run(function()
     local fd = IO.fs_scandir(path):await()
     return function()
@@ -360,7 +368,17 @@ end
 ---@param path string
 ---@return string
 function IO.normalize(path)
-  if path == '/' then
+  if is_windows then
+    path = path:gsub('\\', '/')
+  end
+
+  -- remove trailing slash.
+  if path:sub(-1) == '/' then
+    path = path:sub(1, -2)
+  end
+
+  -- skip if the path already absolute.
+  if IO.is_absolute(path) then
     return path
   end
 
@@ -398,9 +416,6 @@ function IO.join(base, path)
   if base:sub(-1) == '/' then
     base = base:sub(1, -2)
   end
-  if path:sub(1, 1) == '/' then
-    path = path:sub(2)
-  end
   return base .. '/' .. path
 end
 
@@ -408,7 +423,26 @@ end
 ---@param path string
 ---@return string
 function IO.dirname(path)
-  return (path:gsub('/[^/]+/?$', ''))
+  if path:sub(-1) == '/' then
+    path = path:sub(1, -2)
+  end
+  return (path:gsub('/[^/]+$', ''))
+end
+
+if is_windows then
+  ---Return the path is absolute or not.
+  ---@param path string
+  ---@return boolean
+  function IO.is_absolute(path)
+    return path:sub(1, 1) == '/' or path:match('^%a://')
+  end
+else
+  ---Return the path is absolute or not.
+  ---@param path string
+  ---@return boolean
+  function IO.is_absolute(path)
+    return path:sub(1, 1) == '/'
+  end
 end
 
 return IO

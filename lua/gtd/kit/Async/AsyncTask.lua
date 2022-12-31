@@ -1,5 +1,5 @@
 local uv = require('luv')
-local Lua = require('gtd.kit.Lua')
+local kit = require('gtd.kit')
 
 local is_thread = vim.is_thread()
 
@@ -12,6 +12,35 @@ local is_thread = vim.is_thread()
 local AsyncTask = {}
 AsyncTask.__index = AsyncTask
 
+---Settle the specified task.
+---@param task gtd.kit.Async.AsyncTask
+---@param status gtd.kit.Async.AsyncTask.Status
+---@param value any
+local function settle(task, status, value)
+  task.status = status
+  task.value = value
+  for _, c in ipairs(task.children) do
+    c()
+  end
+
+  if status == AsyncTask.Status.Rejected then
+    if not task.chained and not task.synced then
+      local timer = uv.new_timer()
+      timer:start(
+        0,
+        0,
+        kit.safe_schedule_wrap(function()
+          timer:stop()
+          timer:close()
+          if not task.chained and not task.synced then
+            AsyncTask.on_unhandled_rejection(value)
+          end
+        end)
+      )
+    end
+  end
+end
+
 ---@enum gtd.kit.Async.AsyncTask.Status
 AsyncTask.Status = {
   Pending = 0,
@@ -22,7 +51,7 @@ AsyncTask.Status = {
 ---Handle unhandled rejection.
 ---@param err any
 function AsyncTask.on_unhandled_rejection(err)
-  error('AsyncTask.on_unhandled_rejection: ' .. vim.inspect(err))
+  error('AsyncTask.on_unhandled_rejection: ' .. tostring(err))
 end
 
 ---Return the value is AsyncTask or not.
@@ -40,15 +69,13 @@ function AsyncTask.all(tasks)
     local values = {}
     local count = 0
     for i, task in ipairs(tasks) do
-      AsyncTask.resolve(task)
-        :next(function(value)
-          values[i] = value
-          count = count + 1
-          if #tasks == count then
-            resolve(values)
-          end
-        end)
-        :catch(reject)
+      task:dispatch(function(value)
+        values[i] = value
+        count = count + 1
+        if #tasks == count then
+          resolve(values)
+        end
+      end, reject)
     end
   end)
 end
@@ -84,44 +111,22 @@ end
 function AsyncTask.new(runner)
   local self = setmetatable({}, AsyncTask)
 
-  self.gc = Lua.gc(function()
-    if self.status == AsyncTask.Status.Rejected then
-      if not self.chained and not self.synced then
-        AsyncTask.on_unhandled_rejection(self.value)
-      end
-    end
-  end)
-
   self.value = nil
   self.status = AsyncTask.Status.Pending
   self.synced = false
   self.chained = false
   self.children = {}
   local ok, err = pcall(runner, function(res)
-    if self.status ~= AsyncTask.Status.Pending then
-      return
-    end
-    self.status = AsyncTask.Status.Fulfilled
-    self.value = res
-    for _, c in ipairs(self.children) do
-      c()
+    if self.status == AsyncTask.Status.Pending then
+      settle(self, AsyncTask.Status.Fulfilled, res)
     end
   end, function(err)
-    if self.status ~= AsyncTask.Status.Pending then
-      return
-    end
-    self.status = AsyncTask.Status.Rejected
-    self.value = err
-    for _, c in ipairs(self.children) do
-      c()
+    if self.status == AsyncTask.Status.Pending then
+      settle(self, AsyncTask.Status.Rejected, err)
     end
   end)
   if not ok then
-    self.status = AsyncTask.Status.Rejected
-    self.value = err
-    for _, c in ipairs(self.children) do
-      c()
-    end
+    settle(self, AsyncTask.Status.Rejected, err)
   end
   return self
 end
@@ -146,10 +151,10 @@ function AsyncTask:sync(timeout)
     end, 1, false)
   end
   if self.status == AsyncTask.Status.Rejected then
-    error(self.value)
+    error(self.value, 2)
   end
   if self.status ~= AsyncTask.Status.Fulfilled then
-    error('AsyncTask:sync is timeout.')
+    error('AsyncTask:sync is timeout.', 2)
   end
   return self.value
 end
@@ -159,7 +164,10 @@ end
 ---@return any
 function AsyncTask:await(schedule)
   local Async = require('gtd.kit.Async')
-  local res = Async.await(self)
+  local ok, res = pcall(Async.await, self)
+  if not ok then
+    error(res, 2)
+  end
   if schedule then
     Async.await(Async.schedule())
   end
@@ -170,7 +178,7 @@ end
 ---@param on_fulfilled fun(value: any): any
 function AsyncTask:next(on_fulfilled)
   return self:dispatch(on_fulfilled, function(err)
-    error(err)
+    error(err, 2)
   end)
 end
 
@@ -194,7 +202,7 @@ function AsyncTask:dispatch(on_fulfilled, on_rejected)
     local on_next = self.status == AsyncTask.Status.Fulfilled and on_fulfilled or on_rejected
     local res = on_next(self.value)
     if AsyncTask.is(res) then
-      res:next(resolve):catch(reject)
+      res:dispatch(resolve, reject)
     else
       resolve(res)
     end

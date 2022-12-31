@@ -10,6 +10,7 @@ local POS_PATTERN = RegExp.get([=[[^[:digit:]]\d\+\%([^[:digit:]]\d\+\)\?]=])
 ---@class gtd.kit.App.Config.Schema
 ---@field public sources { name: string, option?: table }[] # Specify the source that will be used to search for the definition
 ---@field public get_buffer_path fun(): string # Specify the function to get the current buffer path. It's useful for searching path from terminal buffer etc.
+---@field public on_event fun(event: gtd.Event)
 ---@field public on_context fun(context: gtd.Context) # Modify context on user-land.
 ---@field public on_cancel fun(params: gtd.Params)
 ---@field public on_nothing fun(params: gtd.Params)
@@ -35,6 +36,16 @@ local POS_PATTERN = RegExp.get([=[[^[:digit:]]\d\+\%([^[:digit:]]\d\+\)\?]=])
 
 local gtd = {}
 
+---@enum gtd.Event
+gtd.Event = {
+  Start = 'Start',
+  Cancel = 'Cancel',
+  Nothing = 'Nothing',
+  Location = 'Location',
+  Locations = 'Locations',
+  Finish = 'Finish',
+}
+
 gtd.config = Config.new({
   sources = {
     { name = 'lsp' },
@@ -44,6 +55,8 @@ gtd.config = Config.new({
     return vim.api.nvim_buf_get_name(0)
   end,
   on_context = function(_)
+  end,
+  on_event = function(_)
   end,
   on_cancel = function(_)
     print('Canceled')
@@ -99,6 +112,7 @@ function gtd.exec(params, config)
   local context = gtd._context()
   config.on_context(context)
   Async.run(function()
+    config.on_event(gtd.Event.Start)
     for _, source_config in ipairs(config.sources) do
       local source = gtd.registry[source_config.name]
       if source then
@@ -122,16 +136,22 @@ function gtd.exec(params, config)
     return {}
   end):next(function(locations --[[ @as gtd.kit.LSP.LocationLink[] ]])
     if #locations == 0 then
+      config.on_event(gtd.Event.Nothing)
       config.on_nothing(params)
     elseif context.is_obsolete() then
+      config.on_event(gtd.Event.Cancel)
       config.on_cancel(params)
     elseif #locations == 1 then
+      config.on_event(gtd.Event.Location)
       config.on_location(params, locations[1])
     else
+      config.on_event(gtd.Event.Locations)
       config.on_locations(params, locations)
     end
+    config.on_event(gtd.Event.Finish)
   end):catch(function(err)
     print('[gtd] ' .. tostring(err))
+    config.on_event(gtd.Event.Finish)
   end)
 end
 
@@ -207,9 +227,10 @@ function gtd._context()
   local fname, _, fname_e = RegExp.extract_at(text or '', [[\f\+]], vim.api.nvim_win_get_cursor(0)[2] + 1)
   local row, col = 0, 0
   if fname then
-    local pos_s, pos_e = POS_PATTERN:match_str(text:sub(fname_e + 1))
+    local fname_suffix = text:sub(fname_e)
+    local pos_s, pos_e = POS_PATTERN:match_str(fname_suffix)
     if pos_s and pos_e then
-      local extracted = text:sub(fname_e + 1):sub(pos_s, pos_e)
+      local extracted = fname_suffix:sub(pos_s + 2, pos_e)
       if extracted:match('^%d+') then
         row = tonumber(extracted:match('^%d+'), 10) - 1
       end
@@ -227,7 +248,7 @@ function gtd._context()
     col = col,
     is_obsolete = function()
       local now = gtd._context()
-      return now.mode ~= 'n' or now.bufnr ~= bufnr
+      return now.mode:sub(1, 1) ~= 'n' or now.bufnr ~= bufnr
     end
   }
 end

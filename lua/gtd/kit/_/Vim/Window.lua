@@ -16,11 +16,13 @@ Window.SplitDirection = {
 }
 
 ---@alias gtd.kit.Vim.Window.Specifier gtd.kit.Vim.Window.FloatSpecifier | gtd.kit.Vim.Window.SplitSpecifier
+
 ---@class gtd.kit.Vim.Window.FloatSpecifier
 ---@field public row integer 0-origin screen cell width
 ---@field public col integer 0-origin screen cell width
 ---@field public width integer 0-origin screen cell width
 ---@field public height integer 0-origin screen cell width
+
 ---@class gtd.kit.Vim.Window.SplitSpecifier
 ---@field public direction gtd.kit.Vim.Window.SplitDirection
 ---@field public width integer 0-origin screen cell width

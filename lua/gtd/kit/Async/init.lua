@@ -2,6 +2,7 @@ local AsyncTask = require('gtd.kit.Async.AsyncTask')
 
 local Async = {}
 
+---@type string<thread, integer>
 Async.___threads___ = {}
 
 ---Run async function immediately.
@@ -20,23 +21,42 @@ end
 function Async.async(runner)
   return function(...)
     local args = { ... }
+
+    local running = (coroutine.running())
+    if Async.___threads___[running] then
+      Async.___threads___[running] = Async.___threads___[running] + 1
+      if Async.___threads___[running] <= 1024 then
+        return AsyncTask.new(function(resolve, reject)
+          local v = runner(unpack(args))
+          if AsyncTask.is(v) then
+            v:dispatch(resolve, reject)
+          else
+            resolve(v)
+          end
+        end)
+      end
+    end
+
     local thread = coroutine.create(runner)
     return AsyncTask.new(function(resolve, reject)
-      Async.___threads___[thread] = true
+      Async.___threads___[thread] = 1
 
       local function next_step(ok, v)
         if coroutine.status(thread) == 'dead' then
           Async.___threads___[thread] = nil
-          if not ok then
-            v = AsyncTask.reject(v)
+          if AsyncTask.is(v) then
+            v:dispatch(resolve, reject)
           else
-            v = AsyncTask.resolve(v)
+            if ok then
+              resolve(v)
+            else
+              reject(v)
+            end
           end
-          v:dispatch(resolve, reject)
           return
         end
 
-        AsyncTask.resolve(v):dispatch(function(...)
+        v:dispatch(function(...)
           next_step(coroutine.resume(thread, true, ...))
         end, function(...)
           next_step(coroutine.resume(thread, false, ...))
@@ -55,9 +75,13 @@ function Async.await(task)
   if not Async.___threads___[coroutine.running()] then
     error('`Async.await` must be called in async context.')
   end
-  local ok, res = coroutine.yield(AsyncTask.resolve(task))
+  if not AsyncTask.is(task) then
+    error('`Async.await` must be called with AsyncTask.')
+  end
+
+  local ok, res = coroutine.yield(task)
   if not ok then
-    error(res)
+    error(res, 2)
   end
   return res
 end
