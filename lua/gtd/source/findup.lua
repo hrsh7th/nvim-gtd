@@ -26,7 +26,7 @@ function Source:execute(definition_params, context)
 
     -- Search file via `findfile`.
     local dpath = vim.fs.dirname(vim.uri_to_fname(definition_params.textDocument.uri))
-    local found = vim.fn.findfile(context.fname:gsub('^%./', ''), dpath .. ';')
+    local found = vim.fn.findfile(context.fname:gsub('^[%./]+', ''), dpath .. ';')
     if found == '' then
       return {}
     end
