@@ -5,13 +5,47 @@ local Async = {}
 ---@type table<thread, integer>
 Async.___threads___ = {}
 
----Run async function immediately.
----@generic T: fun(...): gtd.kit.Async.AsyncTask
----@param runner T
----@param ... any
+---Alias of AsyncTask.all.
+---@param tasks gtd.kit.Async.AsyncTask[]
 ---@return gtd.kit.Async.AsyncTask
-function Async.run(runner, ...)
-  return Async.async(runner)(...)
+function Async.all(tasks)
+  return AsyncTask.all(tasks)
+end
+
+---Alias of AsyncTask.race.
+---@param tasks gtd.kit.Async.AsyncTask[]
+---@return gtd.kit.Async.AsyncTask
+function Async.race(tasks)
+  return AsyncTask.race(tasks)
+end
+
+---Alias of AsyncTask.resolve(v).
+---@param v any
+---@return gtd.kit.Async.AsyncTask
+function Async.resolve(v)
+  return AsyncTask.resolve(v)
+end
+
+---Alias of AsyncTask.reject(v).
+---@param v any
+---@return gtd.kit.Async.AsyncTask
+function Async.reject(v)
+  return AsyncTask.reject(v)
+end
+
+---Alias of AsyncTask.new(...).
+---@param runner fun(resolve: fun(value: any), reject: fun(err: any))
+---@return gtd.kit.Async.AsyncTask
+function Async.new(runner)
+  return AsyncTask.new(runner)
+end
+
+---Run async function immediately.
+---@generic T: fun(): gtd.kit.Async.AsyncTask
+---@param runner T
+---@return gtd.kit.Async.AsyncTask
+function Async.run(runner)
+  return Async.async(runner)()
 end
 
 ---Return current context is async coroutine or not.

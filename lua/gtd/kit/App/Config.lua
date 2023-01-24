@@ -1,6 +1,8 @@
 local kit = require('gtd.kit')
 local Cache = require('gtd.kit.App.Cache')
 
+---@class gtd.kit.App.Config.Schema
+
 ---@alias gtd.kit.App.Config.SchemaInternal gtd.kit.App.Config.Schema|{ revision: integer }
 
 ---@class gtd.kit.App.Config
@@ -13,21 +15,15 @@ local Config = {}
 Config.__index = Config
 
 ---Create new config instance.
----@param default? gtd.kit.App.Config.Schema
+---@param default gtd.kit.App.Config.Schema
 function Config.new(default)
   local self = setmetatable({}, Config)
   self._cache = Cache.new()
-  self._default = default or {}
+  self._default = default
   self._global = {}
   self._filetype = {}
   self._buffer = {}
   return self
-end
-
----Set default configuration.
----@param default gtd.kit.App.Config.Schema
-function Config:default(default)
-  self._default = default
 end
 
 ---Update global config.
@@ -81,20 +77,21 @@ end
 ---Create setup interface.
 ---@return fun(config: gtd.kit.App.Config.Schema)|{ filetype: fun(filetypes: string|string[], config: gtd.kit.App.Config.Schema), buffer: fun(bufnr: integer, config: gtd.kit.App.Config.Schema) }
 function Config:create_setup_interface()
-  return setmetatable({}, {
-    ---@param config gtd.kit.App.Config.Schema
-    __call = function(_, config)
-      self:global(config)
-    end,
+  return setmetatable({
     ---@param filetypes string|string[]
     ---@param config gtd.kit.App.Config.Schema
-    filetype = function(_, filetypes, config)
+    filetype = function(filetypes, config)
       self:filetype(filetypes, config)
     end,
     ---@param bufnr integer
     ---@param config gtd.kit.App.Config.Schema
-    buffer = function(_, bufnr, config)
+    buffer = function(bufnr, config)
       self:buffer(bufnr, config)
+    end,
+  }, {
+    ---@param config gtd.kit.App.Config.Schema
+    __call = function(_, config)
+      self:global(config)
     end,
   })
 end

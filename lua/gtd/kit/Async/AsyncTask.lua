@@ -80,6 +80,17 @@ function AsyncTask.all(tasks)
   end)
 end
 
+---Resolve first resolved task.
+---@param tasks any[]
+---@return gtd.kit.Async.AsyncTask
+function AsyncTask.race(tasks)
+  return AsyncTask.new(function(resolve, reject)
+    for _, task in ipairs(tasks) do
+      task:dispatch(resolve, reject)
+    end
+  end)
+end
+
 ---Create resolved AsyncTask.
 ---@param v any
 ---@return gtd.kit.Async.AsyncTask
@@ -106,8 +117,7 @@ function AsyncTask.reject(v)
 end
 
 ---Create new async task object.
----@generic T
----@param runner fun(resolve?: fun(value: T?), reject?: fun(err: any?))
+---@param runner fun(resolve?: fun(value: any?), reject?: fun(err: any?))
 function AsyncTask.new(runner)
   local self = setmetatable({}, AsyncTask)
 
@@ -220,10 +230,7 @@ function AsyncTask:dispatch(on_fulfilled, on_rejected)
   if self.status == AsyncTask.Status.Pending then
     return AsyncTask.new(function(resolve, reject)
       table.insert(self.children, function()
-        local ok, err = pcall(dispatch, resolve, reject)
-        if not ok then
-          reject(err)
-        end
+        dispatch(resolve, reject)
       end)
     end)
   end

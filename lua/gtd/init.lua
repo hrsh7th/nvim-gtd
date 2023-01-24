@@ -65,7 +65,7 @@ gtd.config = Config.new({
     print('Nothing found')
   end,
   on_location = function(params, location)
-    gtd._open(params, location)
+    gtd.open(params, location)
   end,
   on_locations = function(params, locations)
     vim.ui.select(locations, {
@@ -75,7 +75,7 @@ gtd.config = Config.new({
       end,
     }, function(location)
       if location then
-        gtd._open(params, location)
+        gtd.open(params, location)
       else
         print('Canceled')
       end
@@ -155,6 +155,33 @@ function gtd.exec(params, config)
   end)
 end
 
+---Open LocationLink.
+---@param params gtd.Params
+---@param location gtd.kit.LSP.LocationLink
+function gtd.open(params, location)
+  vim.cmd.normal({ bang = true, [[m']] })
+
+  local filename = vim.uri_to_fname(location.targetUri)
+  local skip = true
+  skip = skip and vim.tbl_contains({ 'e', 'b' }, params.command:sub(1, 1))
+  skip = skip and vim.fn.bufexists(filename) == 1
+  skip = skip and vim.fn.bufnr(filename) == vim.api.nvim_get_current_buf()
+  if not skip then
+    vim.cmd[params.command]({
+      args = {
+        filename
+      }
+    })
+  end
+  if location.targetSelectionRange then
+    local row = location.targetSelectionRange.start.line + 1
+    local col = location.targetSelectionRange.start.character + 1
+    if row ~= 1 or col ~= 1 then
+      vim.api.nvim_win_set_cursor(0, { row, col - 1 })
+    end
+  end
+end
+
 ---Normalize textDocument/definition response.
 ---@param locations gtd.kit.LSP.Location | gtd.kit.LSP.LocationLink | (gtd.kit.LSP.Location | gtd.kit.LSP.LocationLink)[] | nil
 ---@param context gtd.Context
@@ -200,24 +227,6 @@ function gtd._normalize(locations, context, position_encoding_kind)
     }
   end
   return vim.tbl_values(new_locations)
-end
-
----Open LocationLink.
----@param params gtd.Params
----@param location gtd.kit.LSP.LocationLink
-function gtd._open(params, location)
-  vim.cmd[params.command]({
-    args = {
-      vim.uri_to_fname(location.targetUri)
-    }
-  })
-  if location.targetSelectionRange then
-    local row = location.targetSelectionRange.start.line + 1
-    local col = location.targetSelectionRange.start.character + 1
-    if row ~= 1 or col ~= 1 then
-      vim.api.nvim_win_set_cursor(0, { row, col - 1 })
-    end
-  end
 end
 
 ---@return gtd.Context
