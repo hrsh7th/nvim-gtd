@@ -1,4 +1,5 @@
 local kit = require('gtd.kit')
+local helper = require('gtd.helper')
 local Config = require('gtd.kit.App.Config')
 local LSP = require('gtd.kit.LSP')
 local Async = require('gtd.kit.Async')
@@ -54,7 +55,8 @@ gtd.config = Config.new({
   get_buffer_path = function()
     return vim.api.nvim_buf_get_name(0)
   end,
-  on_context = function(_)
+  on_context = function(ctx)
+    helper.fix_diff(ctx)
   end,
   on_event = function(_)
   end,
