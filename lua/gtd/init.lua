@@ -53,7 +53,11 @@ gtd.config = Config.new({
     { name = 'findup' },
   },
   get_buffer_path = function()
-    return vim.api.nvim_buf_get_name(0)
+    local name = vim.api.nvim_buf_get_name(0)
+    if vim.fn.isdirectory(name) then
+      return name
+    end
+    return vim.fn.getcwd()
   end,
   on_context = function(ctx)
     helper.fix_diff(ctx)
