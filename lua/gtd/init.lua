@@ -98,8 +98,8 @@ gtd.registry = {}
 ---@param source gtd.Source
 function gtd.register_source(name, source)
   source.get_position_encoding_kind = source.get_position_encoding_kind or function()
-    return LSP.PositionEncodingKind.UTF16
-  end
+        return LSP.PositionEncodingKind.UTF16
+      end
   gtd.registry[name] = source
 end
 
@@ -165,26 +165,32 @@ end
 ---@param params gtd.Params
 ---@param location gtd.kit.LSP.LocationLink
 function gtd.open(params, location)
-  vim.cmd.normal({ bang = true, [[m']] })
-
   local filename = vim.uri_to_fname(location.targetUri)
+
+  local motion
+  if location.targetSelectionRange then
+    local row = location.targetSelectionRange.start.line + 1
+    local col = location.targetSelectionRange.start.character + 1
+    if row ~= 1 or col ~= 1 then
+      vim.cmd.normal({ 'm\'', bang = true })
+    end
+  end
+
   local skip = true
   skip = skip and vim.tbl_contains({ 'e', 'b' }, params.command:sub(1, 1))
   skip = skip and vim.fn.bufexists(filename) == 1
   skip = skip and vim.fn.bufnr(filename) == vim.api.nvim_get_current_buf()
   if not skip then
     vim.cmd[params.command]({
-      args = {
-        filename
+      filename,
+      mods = {
+        keepalt = true,
+        keepjumps = true,
       }
     })
   end
-  if location.targetSelectionRange then
-    local row = location.targetSelectionRange.start.line + 1
-    local col = location.targetSelectionRange.start.character + 1
-    if row ~= 1 or col ~= 1 then
-      vim.api.nvim_win_set_cursor(0, { row, col - 1 })
-    end
+  if motion then
+    vim.cmd.normal({ motion, bang = true })
   end
 end
 
