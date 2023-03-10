@@ -167,10 +167,10 @@ end
 function gtd.open(params, location)
   local filename = vim.uri_to_fname(location.targetUri)
 
-  local motion
+  local row, col = 1, 1
   if location.targetSelectionRange then
-    local row = location.targetSelectionRange.start.line + 1
-    local col = location.targetSelectionRange.start.character + 1
+    row = location.targetSelectionRange.start.line + 1
+    col = location.targetSelectionRange.start.character + 1
     if row ~= 1 or col ~= 1 then
       vim.cmd.normal({ 'm\'', bang = true })
     end
@@ -180,7 +180,11 @@ function gtd.open(params, location)
   skip = skip and vim.tbl_contains({ 'e', 'b' }, params.command:sub(1, 1))
   skip = skip and vim.fn.bufexists(filename) == 1
   skip = skip and vim.fn.bufnr(filename) == vim.api.nvim_get_current_buf()
-  if not skip then
+  if skip then
+    if row ~= 1 or col ~= 1 then
+      vim.api.nvim_win_set_cursor(0, { row, col - 1 })
+    end
+  else
     vim.cmd[params.command]({
       filename,
       mods = {
@@ -188,9 +192,6 @@ function gtd.open(params, location)
         keepjumps = true,
       }
     })
-  end
-  if motion then
-    vim.cmd.normal({ motion, bang = true })
   end
 end
 
