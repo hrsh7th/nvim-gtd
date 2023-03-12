@@ -180,11 +180,7 @@ function gtd.open(params, location)
   skip = skip and vim.tbl_contains({ 'e', 'b' }, params.command:sub(1, 1))
   skip = skip and vim.fn.bufexists(filename) == 1
   skip = skip and vim.fn.bufnr(filename) == vim.api.nvim_get_current_buf()
-  if skip then
-    if row ~= 1 or col ~= 1 then
-      vim.api.nvim_win_set_cursor(0, { row, col - 1 })
-    end
-  else
+  if not skip then
     vim.cmd[params.command]({
       filename,
       mods = {
@@ -192,6 +188,9 @@ function gtd.open(params, location)
         keepjumps = true,
       }
     })
+  end
+  if row ~= 1 or col ~= 1 then
+    vim.api.nvim_win_set_cursor(0, { row, col - 1 })
   end
 end
 
