@@ -248,10 +248,10 @@ function gtd._context()
   local fname, _, fname_e = RegExp.extract_at(text or '', [[\f\+]], vim.api.nvim_win_get_cursor(0)[2] + 1)
   local row, col = 0, 0
   if fname then
-    local fname_suffix = text:sub(fname_e)
-    local pos_s, pos_e = POS_PATTERN:match_str(fname_suffix)
+    local fname_after = text:sub(fname_e)
+    local pos_s, pos_e = POS_PATTERN:match_str(fname_after)
     if pos_s and pos_e then
-      local extracted = fname_suffix:sub(pos_s + 2, pos_e)
+      local extracted = fname_after:sub(pos_s + 2, pos_e)
       if extracted:match('^%d+') then
         row = tonumber(extracted:match('^%d+'), 10) - 1
       end
@@ -260,7 +260,7 @@ function gtd._context()
       end
     end
   end
-  return {
+  return vim.print({
     mode = vim.api.nvim_get_mode().mode,
     bufnr = bufnr,
     text = text,
@@ -271,7 +271,7 @@ function gtd._context()
       local now = gtd._context()
       return now.mode:sub(1, 1) ~= 'n' or now.bufnr ~= bufnr
     end
-  }
+  })
 end
 
 gtd.register_source('findup', require('gtd.source.findup').new())
