@@ -49,7 +49,8 @@ gtd.Event = {
 
 gtd.config = Config.new({
   sources = {
-    { name = 'lsp' },
+    { name = 'lsp_definitions' },
+    { name = 'lsp_type_definitions' },
     { name = 'findup' },
   },
   get_buffer_path = function()
@@ -260,7 +261,7 @@ function gtd._context()
       end
     end
   end
-  return vim.print({
+  return {
     mode = vim.api.nvim_get_mode().mode,
     bufnr = bufnr,
     text = text,
@@ -271,11 +272,14 @@ function gtd._context()
       local now = gtd._context()
       return now.mode:sub(1, 1) ~= 'n' or now.bufnr ~= bufnr
     end
-  })
+  }
 end
 
 gtd.register_source('findup', require('gtd.source.findup').new())
 gtd.register_source('walk', require('gtd.source.walk').new())
-gtd.register_source('lsp', require('gtd.source.lsp').new())
+gtd.register_source('lsp', require('gtd.source.lsp_definition').new())
+gtd.register_source('lsp_definition', require('gtd.source.lsp_definition').new())
+gtd.register_source('lsp_type_definition', require('gtd.source.lsp_type_definition').new())
+gtd.register_source('lsp_implementation', require('gtd.source.lsp_implementation').new())
 
 return gtd
