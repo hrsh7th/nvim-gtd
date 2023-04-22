@@ -260,7 +260,7 @@ function gtd._context()
       end
     end
   end
-  return vim.print({
+  return {
     mode = vim.api.nvim_get_mode().mode,
     bufnr = bufnr,
     text = text,
@@ -271,7 +271,7 @@ function gtd._context()
       local now = gtd._context()
       return now.mode:sub(1, 1) ~= 'n' or now.bufnr ~= bufnr
     end
-  })
+  }
 end
 
 gtd.register_source('findup', require('gtd.source.findup').new())

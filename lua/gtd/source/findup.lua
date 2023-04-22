@@ -29,11 +29,6 @@ function Source:execute(definition_params, context)
     if vim.fn.isdirectory(dpath) == 0 then
       dpath = vim.fs.dirname(dpath)
     end
-    vim.print({
-      uri = definition_params.textDocument.uri,
-      uripath = vim.uri_to_fname(definition_params.textDocument.uri),
-      dpath = dpath,
-    })
     local found = vim.fn.findfile(context.fname:gsub('^[%./]+', ''), dpath .. ';')
     if found == '' then
       return {}
