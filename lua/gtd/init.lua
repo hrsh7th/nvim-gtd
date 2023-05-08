@@ -51,6 +51,7 @@ gtd.config = Config.new({
   sources = {
     { name = 'lsp_definitions' },
     { name = 'lsp_type_definitions' },
+    { name = 'lsp_implementation' },
     { name = 'findup' },
   },
   get_buffer_path = function()
@@ -277,7 +278,7 @@ end
 
 gtd.register_source('findup', require('gtd.source.findup').new())
 gtd.register_source('walk', require('gtd.source.walk').new())
-gtd.register_source('lsp', require('gtd.source.lsp_definition').new())
+gtd.register_source('lsp', require('gtd.source.lsp_definition').new(true))
 gtd.register_source('lsp_definition', require('gtd.source.lsp_definition').new())
 gtd.register_source('lsp_type_definition', require('gtd.source.lsp_type_definition').new())
 gtd.register_source('lsp_implementation', require('gtd.source.lsp_implementation').new())

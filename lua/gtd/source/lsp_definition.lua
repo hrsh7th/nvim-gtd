@@ -4,11 +4,16 @@ local Async = require('gtd.kit.Async')
 local Client = require('gtd.kit.LSP.Client')
 local Position = require('gtd.kit.LSP.Position')
 
+---@class gtd.source.LSPDefinitionSource : gtd.Source
+---@field public is_deprecated boolean
 local Source = {}
 Source.__index = Source
 
-function Source.new()
-  return setmetatable({}, Source)
+---@param is_deprecated? boolean
+function Source.new(is_deprecated)
+  local self = setmetatable({}, Source)
+  self.is_deprecated = not not is_deprecated
+  return self
 end
 
 function Source:get_position_encoding_kind()
@@ -18,6 +23,9 @@ end
 ---@param definition_params gtd.kit.LSP.DefinitionParams
 ---@param context gtd.Context
 function Source:execute(definition_params, context)
+  if self.is_deprecated then
+    vim.api.nvim_echo({ { '[gtd] `lsp` source is renamed. Please use `lsp_definition` instead.', 'WarningMsg' } }, true, {})
+  end
   return Async.run(function()
     local locations = {}
     for _, client in ipairs(vim.lsp.get_active_clients({ bufnr = 0 })) do
