@@ -28,7 +28,7 @@ function Source:execute(definition_params, context)
   end
   return Async.run(function()
     local locations = {}
-    for _, client in ipairs(vim.lsp.get_active_clients({ bufnr = 0 })) do
+    for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
       ---@type gtd.kit.LSP.ServerCapabilities
       local server_capabilities = client.server_capabilities
       if server_capabilities.definitionProvider then
