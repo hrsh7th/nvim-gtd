@@ -8,8 +8,7 @@ local Source = {}
 Source.__index = Source
 
 function Source.new()
-  local self = setmetatable({}, Source)
-  return self
+  return setmetatable({}, Source)
 end
 
 function Source:get_position_encoding_kind()
@@ -21,12 +20,12 @@ end
 function Source:execute(definition_params, context)
   return Async.run(function()
     local locations = {}
-    for _, client in ipairs(vim.lsp.get_active_clients({ bufnr = 0 })) do
+    for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
       ---@type gtd.kit.LSP.ServerCapabilities
       local server_capabilities = client.server_capabilities
-      if server_capabilities.definitionProvider then
-        ---@type gtd.kit.LSP.TextDocumentDefinitionResponse
-        local response = Client.new(client):textDocument_definition({
+      if server_capabilities.implementationProvider then
+        ---@type gtd.kit.LSP.TextDocumentImplementationResponse
+        local response = Client.new(client):textDocument_implementation({
           textDocument = definition_params.textDocument,
           position = Position.to(
             context.text,
@@ -49,4 +48,3 @@ function Source:execute(definition_params, context)
 end
 
 return Source
-

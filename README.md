@@ -43,11 +43,23 @@ end)
 
 The following sources are built-in.
 
-#### lsp
+#### lsp_definition
 
 (Default: enabled)
 
 Find definitions via LSP `textDocument/definition`.
+
+#### lsp_type_definition
+
+(Default: enabled)
+
+Find definitions via LSP `textDocument/typeDefinition`.
+
+#### lsp_implementation
+
+(Default: enabled)
+
+Find definitions via LSP `textDocument/implementation`.
 
 #### findup
 
