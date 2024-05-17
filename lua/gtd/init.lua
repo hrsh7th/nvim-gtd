@@ -100,8 +100,8 @@ gtd.registry = {}
 ---@param source gtd.Source
 function gtd.register_source(name, source)
   source.get_position_encoding_kind = source.get_position_encoding_kind or function()
-        return LSP.PositionEncodingKind.UTF16
-      end
+    return LSP.PositionEncodingKind.UTF16
+  end
   gtd.registry[name] = source
 end
 
@@ -121,24 +121,30 @@ function gtd.exec(params, config)
   config.on_context(context)
   Async.run(function()
     config.on_event(gtd.Event.Start)
-    for _, source_config in ipairs(config.sources) do
-      local source = gtd.registry[source_config.name]
-      if source then
-        local encoding_fixed_params = kit.merge({
-          position = Position.to(
-            context.text,
-            definition_params.position,
-            LSP.PositionEncodingKind.UTF8,
-            source:get_position_encoding_kind()
-          )
-        }, definition_params)
-        local locations = source:execute(encoding_fixed_params, context, source_config.option)
-        locations = locations:catch(function() return {} end)
-        locations = locations:await()
-        locations = gtd._normalize(locations, context, source:get_position_encoding_kind())
-        if #locations > 0 then
-          return locations
+    for _, source_configs in ipairs(config.sources) do
+      local unique_locations = {}
+      for _, source_config in ipairs(kit.to_array(source_configs)) do
+        local source = gtd.registry[source_config.name]
+        if source then
+          local encoding_fixed_params = kit.merge({
+            position = Position.to(
+              context.text,
+              definition_params.position,
+              LSP.PositionEncodingKind.UTF8,
+              source:get_position_encoding_kind()
+            )
+          }, definition_params)
+          local locations = source:execute(encoding_fixed_params, context, source_config.option)
+          locations = locations:catch(function() return {} end)
+          locations = locations:await()
+          locations = gtd._normalize(locations, context, source:get_position_encoding_kind())
+          for _, location in ipairs(locations) do
+            unique_locations[location.targetUri] = location
+          end
         end
+      end
+      if #vim.tbl_keys(unique_locations) > 0 then
+        return vim.tbl_values(unique_locations)
       end
     end
     return {}
@@ -257,7 +263,7 @@ function gtd._context()
       if extracted:match('^%d+') then
         row = tonumber(extracted:match('^%d+'), 10) - 1
       end
-      if extracted:match('%d+$') then
+      if extracted:match('%D%d+$') then
         col = tonumber(extracted:match('%d+$'), 10) - 1
       end
     end
