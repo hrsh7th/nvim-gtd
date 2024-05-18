@@ -1,6 +1,6 @@
 local kit = require('gtd.kit')
 local LSP = require('gtd.kit.LSP')
-local Worker = require('gtd.kit.Thread.Worker')
+local Worker = require('gtd.kit.Async.Worker')
 local Async = require('gtd.kit.Async')
 
 ---@class gtd.source.walk.Option
