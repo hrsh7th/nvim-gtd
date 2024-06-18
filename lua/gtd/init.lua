@@ -49,8 +49,8 @@ gtd.Event = {
 
 gtd.config = Config.new({
   sources = {
-    { name = 'lsp_definitions' },
-    { name = 'lsp_type_definitions' },
+    { name = 'lsp_definition' },
+    { name = 'lsp_type_definition' },
     { name = 'lsp_implementation' },
     { name = 'findup' },
   },
