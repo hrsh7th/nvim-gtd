@@ -13,4 +13,11 @@ function helper.fix_diff(context)
   end
 end
 
+---@param context gtd.Context
+function helper.fix_scheme_fragment(context)
+  if context.fname and context.fname:match('^//') then
+    context.fname = context.fname:gsub('^//', '')
+  end
+end
+
 return helper

@@ -63,6 +63,7 @@ gtd.config = Config.new({
   end,
   on_context = function(ctx)
     helper.fix_diff(ctx)
+    helper.fix_scheme_fragment(ctx)
   end,
   on_event = function(_)
   end,

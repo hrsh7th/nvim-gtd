@@ -1,6 +1,6 @@
 local kit = require('gtd.kit')
 local LSP = require('gtd.kit.LSP')
-local Worker = require('gtd.kit.Async.Worker')
+local IO = require('gtd.kit.IO')
 local Async = require('gtd.kit.Async')
 
 ---@class gtd.source.walk.Option
@@ -54,22 +54,18 @@ function Source:execute(definition_params, context, option)
     end
 
     -- Search file via IO.walk.
-    local paths = Worker.new(function(root_dir, fname, ignore_patterns)
-      local IO = require('gtd.kit.IO')
-      local paths = {}
-      return IO.walk(root_dir, function(_, entry)
-        for _, pattern in ipairs(ignore_patterns) do
-          if string.match(entry.path, pattern) then
-            return IO.WalkStatus.SkipDir
-          end
+    local normalized_fname = self:_normalize_fname(context)
+    local paths = {}
+    IO.walk(root_dir, function(_, entry)
+      for _, pattern in ipairs(option.ignore_patterns) do
+        if string.match(entry.path, pattern) then
+          return IO.WalkStatus.SkipDir
         end
-        if entry.path:find(fname, 1, true) then
-          table.insert(paths, entry.path)
-        end
-      end):next(function()
-        return paths
-      end)
-    end)(root_dir, self:_normalize_fname(context), option.ignore_patterns):await()
+      end
+      if entry.path:find(normalized_fname, 1, true) then
+        table.insert(paths, entry.path)
+      end
+    end):await()
 
     Async.schedule():await()
 
