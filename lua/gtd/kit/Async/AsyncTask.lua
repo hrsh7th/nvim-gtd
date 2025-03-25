@@ -9,7 +9,7 @@ local is_thread = vim.is_thread()
 ---@field private status gtd.kit.Async.AsyncTask.Status
 ---@field private synced boolean
 ---@field private chained boolean
----@field private children (fun(): any)[]
+---@field private children (fun(): any)[]?
 local AsyncTask = {}
 AsyncTask.__index = AsyncTask
 
@@ -20,8 +20,10 @@ AsyncTask.__index = AsyncTask
 local function settle(task, status, value)
   task.status = status
   task.value = value
-  for _, c in ipairs(task.children) do
-    c()
+  if task.children then
+    for _, c in ipairs(task.children) do
+      c()
+    end
   end
 
   if status == AsyncTask.Status.Rejected then
@@ -52,7 +54,7 @@ AsyncTask.Status = {
 ---Handle unhandled rejection.
 ---@param err any
 function AsyncTask.on_unhandled_rejection(err)
-  error('AsyncTask.on_unhandled_rejection: ' .. tostring(err))
+  error('AsyncTask.on_unhandled_rejection: ' .. (type(err) == 'table' and vim.inspect(err) or tostring(err)), 2)
 end
 
 ---Return the value is AsyncTask or not.
@@ -67,6 +69,11 @@ end
 ---@return gtd.kit.Async.AsyncTask
 function AsyncTask.all(tasks)
   return AsyncTask.new(function(resolve, reject)
+    if #tasks == 0 then
+      resolve({})
+      return
+    end
+
     local values = {}
     local count = 0
     for i, task in ipairs(tasks) do
@@ -120,13 +127,13 @@ end
 ---Create new async task object.
 ---@param runner fun(resolve?: fun(value: any?), reject?: fun(err: any?))
 function AsyncTask.new(runner)
-  local self = setmetatable({}, AsyncTask)
-
-  self.value = nil
-  self.status = AsyncTask.Status.Pending
-  self.synced = false
-  self.chained = false
-  self.children = {}
+  local self = setmetatable({
+    value = nil,
+    status = AsyncTask.Status.Pending,
+    synced = false,
+    chained = false,
+    children = nil,
+  }, AsyncTask)
   local ok, err = pcall(runner, function(res)
     if self.status == AsyncTask.Status.Pending then
       settle(self, AsyncTask.Status.Fulfilled, res)
@@ -144,11 +151,9 @@ end
 
 ---Sync async task.
 ---@NOTE: This method uses `vim.wait` so that this can't wait the typeahead to be empty.
----@param timeout? number
+---@param timeout integer
 ---@return any
 function AsyncTask:sync(timeout)
-  timeout = timeout or 1000
-
   self.synced = true
 
   local time = uv.now()
@@ -162,6 +167,9 @@ function AsyncTask:sync(timeout)
       vim.wait(0)
     end
   end
+  if self.status == AsyncTask.Status.Pending then
+    error('AsyncTask:sync is timeout.', 2)
+  end
   if self.status == AsyncTask.Status.Rejected then
     error(self.value, 2)
   end
@@ -172,16 +180,16 @@ function AsyncTask:sync(timeout)
 end
 
 ---Await async task.
----@param schedule? boolean
 ---@return any
-function AsyncTask:await(schedule)
+function AsyncTask:await()
   local Async = require('gtd.kit.Async')
+  local in_fast_event = vim.in_fast_event()
   local ok, res = pcall(Async.await, self)
   if not ok then
     error(res, 2)
   end
-  if schedule then
-    Async.await(Async.schedule())
+  if not in_fast_event and vim.in_fast_event() then
+    Async.schedule():await()
   end
   return res
 end
@@ -235,9 +243,14 @@ function AsyncTask:dispatch(on_fulfilled, on_rejected)
 
   if self.status == AsyncTask.Status.Pending then
     return AsyncTask.new(function(resolve, reject)
-      table.insert(self.children, function()
-        dispatch(resolve, reject)
-      end)
+      local function dispatcher()
+        return dispatch(resolve, reject)
+      end
+      if self.children then
+        table.insert(self.children, dispatcher)
+      else
+        self.children = { dispatcher }
+      end
     end)
   end
   return AsyncTask.new(dispatch)

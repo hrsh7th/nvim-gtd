@@ -1,6 +1,8 @@
 local kit = require('gtd.kit')
 local Async = require('gtd.kit.Async')
 
+local buf = vim.api.nvim_create_buf(false, true)
+
 ---@alias gtd.kit.Vim.Keymap.Keys { keys: string, remap?: boolean }
 ---@alias gtd.kit.Vim.Keymap.KeysSpecifier string|gtd.kit.Vim.Keymap.Keys
 
@@ -15,7 +17,10 @@ end
 
 local Keymap = {}
 
-Keymap._callbacks = {}
+_G.kit = _G.kit or {}
+_G.kit.Vim = _G.kit.Vim or {}
+_G.kit.Vim.Keymap = _G.kit.Vim.Keymap or {}
+_G.kit.Vim.Keymap.callbacks = _G.kit.Vim.Keymap.callbacks or {}
 
 ---Replace termcodes.
 ---@param keys string
@@ -26,7 +31,16 @@ end
 
 ---Normalize keycode.
 function Keymap.normalize(s)
-  return vim.fn.keytrans(Keymap.termcodes(s))
+  local desc = 'gtd.kit.Vim.Keymap.normalize'
+  vim.api.nvim_buf_set_keymap(buf, 't', s, '.', { desc = desc })
+  for _, map in ipairs(vim.api.nvim_buf_get_keymap(buf, 't')) do
+    if map.desc == desc then
+      vim.api.nvim_buf_del_keymap(buf, 't', s)
+      return map.lhs --[[@as string]]
+    end
+  end
+  vim.api.nvim_buf_del_keymap(buf, 't', s)
+  return s
 end
 
 ---Set callback for consuming next typeahead.
@@ -43,7 +57,7 @@ end
 function Keymap.send(keys, no_insert)
   local unique_id = kit.unique_id()
   return Async.new(function(resolve, _)
-    Keymap._callbacks[unique_id] = resolve
+    _G.kit.Vim.Keymap.callbacks[unique_id] = resolve
 
     local callback = Keymap.termcodes(('<Cmd>lua require("gtd.kit.Vim.Keymap")._resolve(%s)<CR>'):format(unique_id))
     if no_insert then
@@ -60,7 +74,7 @@ function Keymap.send(keys, no_insert)
       end
     end
   end):catch(function()
-    Keymap._callbacks[unique_id] = nil
+    _G.kit.Vim.Keymap.callbacks[unique_id] = nil
   end)
 end
 
@@ -69,16 +83,20 @@ end
 ---@return string
 function Keymap.to_sendable(callback)
   local unique_id = kit.unique_id()
-  Keymap._callbacks[unique_id] = Async.async(callback)
+  _G.kit.Vim.Keymap.callbacks[unique_id] = function()
+    Async.run(callback)
+  end
   return Keymap.termcodes(('<Cmd>lua require("gtd.kit.Vim.Keymap")._resolve(%s)<CR>'):format(unique_id))
 end
 
 ---Test spec helper.
 ---@param spec fun(): any
 function Keymap.spec(spec)
-  local task = Async.resolve():next(Async.async(spec))
+  local task = Async.resolve():next(function()
+    return Async.run(spec)
+  end)
   vim.api.nvim_feedkeys('', 'x', true)
-  task:sync()
+  task:sync(5000)
   collectgarbage('collect')
   vim.wait(200)
 end
@@ -86,8 +104,8 @@ end
 ---Resolve running keys.
 ---@param unique_id integer
 function Keymap._resolve(unique_id)
-  Keymap._callbacks[unique_id]()
-  Keymap._callbacks[unique_id] = nil
+  _G.kit.Vim.Keymap.callbacks[unique_id]()
+  _G.kit.Vim.Keymap.callbacks[unique_id] = nil
 end
 
 return Keymap
